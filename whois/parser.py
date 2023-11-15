@@ -421,7 +421,11 @@ class WhoisCl(WhoisEntry):
     }
 
     def __init__(self, domain, text):
-        if 'No match for "' in text:
+        not_found_flags = (
+            'No match for "',
+            'no entries found'
+        )
+        if any(f in text for f in not_found_flags):
             raise PywhoisError(text)
         else:
             WhoisEntry.__init__(self, domain, text, self.regex)
@@ -947,13 +951,13 @@ class WhoisFi(WhoisEntry):
 class WhoisJp(WhoisEntry):
     """Whois parser for .jp domains"""
     regex = {
-        'domain_name':      r'.*\[Domain Name\]\s*(.+)',
+        'domain_name':      r'.*\[(?:Domain Name|ドメイン名)\]\s*(.+)',
         'registrant_org':   r'.*\[(?:Organization|Registrant)\](.+)',
-        'creation_date':    r'\[(?:Registered Date|Created on)\]\s*(.+)',
-        'expiration_date':  r'\[Expires on\]\s*(.+)',
-        'name_servers':     r'.*\[Name Server\]\s*(.+)',  # list of name servers
-        'updated_date':     r'\[Last Updated?\]\s?(.+)',
-        'status':           r'\[(?:State|Status)\]\s*(.+)',  # list of statuses
+        'creation_date':    r'\[(?:Registered Date|Created on|登録年月日)\]\s*([0-9/ :\(\)A-Z]+)',
+        'expiration_date':  r'(?:\[Expires on|有効期限\]\s*(.+)|\[状態\]\s+(?:Connected|Advance\-Registered)+\s+\(([0-9/ :\(\)A-Z]+)\))',
+        'name_servers':     r'.*\[(?:Name Server|ネームサーバ)\]\s*(.+)',  # list of name servers
+        'updated_date':     r'\[(?:Last Updated?|最終更新)\]\s?([0-9/ :\(\)A-Z]+)',
+        'status':           r'\[(?:State|Status|状態)\]\s*(.+)',  # list of statuses
     }
 
     def __init__(self, domain, text):
@@ -1126,7 +1130,11 @@ class WhoisKr(WhoisEntry):
     }
 
     def __init__(self, domain, text):
-        if text.endswith(' no match'):
+        not_found_flags = (
+            ' no match',
+            'The requested domain was not found in the Registry'
+        )
+        if any(f in text for f in not_found_flags):
             raise PywhoisError(text)
         else:
             WhoisEntry.__init__(self, domain, text, self.regex)
@@ -1969,7 +1977,11 @@ class WhoisTw(WhoisEntry):
     }
 
     def __init__(self, domain, text):
-        if 'not found.' in text:
+        not_found_flags = (
+            'not found.',
+            'No Found'
+        )
+        if any(f in text for f in not_found_flags):
             raise PywhoisError(text)
         else:
             WhoisEntry.__init__(self, domain, text, self.regex)
@@ -3371,6 +3383,7 @@ class WhoisSite(WhoisEntry):
 
     def __init__(self, domain, text):
         if "DOMAIN NOT FOUND" in text:
+            raise PywhoisError(text)
 
           
 class WhoisEdu(WhoisEntry):
